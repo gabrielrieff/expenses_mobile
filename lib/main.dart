@@ -2,6 +2,7 @@
 
 import 'dart:math';
 
+import 'package:expenses/components/chart.dart';
 import 'package:expenses/components/transaction_form.dart';
 import 'package:flutter/material.dart';
 
@@ -12,8 +13,6 @@ main() => runApp(ExpensesApp());
 
 class ExpensesApp extends StatelessWidget {
   ExpensesApp({super.key});
-
-  main() => runApp(ExpensesApp());
 
   @override
   Widget build(BuildContext context) {
@@ -54,20 +53,38 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final _transactions = [
+  final List<Transaction> _transactions = [
     Transaction(
       id: "t1",
-      title: "Tenis",
-      value: 320.75,
-      date: DateTime.now(),
+      title: "Antiga",
+      value: 580.29,
+      date: DateTime.now().subtract(Duration(days: 33)),
     ),
     Transaction(
       id: "t2",
-      title: "Carro",
-      value: 580.29,
-      date: DateTime.now(),
+      title: "Tenis",
+      value: 320.75,
+      date: DateTime.now().subtract(Duration(days: 3)),
+    ),
+    Transaction(
+      id: "t3",
+      title: "Luz",
+      value: 110.89,
+      date: DateTime.now().subtract(Duration(days: 2)),
+    ),
+    Transaction(
+      id: "t4",
+      title: "Agua",
+      value: 78.00,
+      date: DateTime.now().subtract(Duration(days: 4)),
     ),
   ];
+
+  List<Transaction> get _recentTransaction {
+    return _transactions.where((tr) {
+      return tr.date.isAfter(DateTime.now().subtract(Duration(days: 7)));
+    }).toList();
+  }
 
   _openTransactionFormModal(BuildContext context) {
     showModalBottomSheet(
@@ -111,13 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             // ignore: sized_box_for_whitespace
-            Container(
-              width: double.infinity,
-              child: const Card(
-                color: Colors.amber,
-                child: Text("Grafico"),
-              ),
-            ),
+            Chart(_recentTransaction),
             TransactionList(_transactions),
           ],
         ),
