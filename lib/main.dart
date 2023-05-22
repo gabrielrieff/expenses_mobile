@@ -1,9 +1,11 @@
 // ignore_for_file: avoid_unnecessary_containers, prefer_const_constructors_in_immutables, deprecated_member_use, prefer_const_constructors
 
+import 'dart:io';
 import 'dart:math';
 
 import 'package:expenses/components/chart.dart';
 import 'package:expenses/components/transaction_form.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'components/transaction_list.dart';
@@ -32,6 +34,9 @@ class ExpensesApp extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
+          button: TextStyle(
+            color: Colors.white,
+          ),
         ),
         appBarTheme: const AppBarTheme(
           titleTextStyle: TextStyle(
@@ -53,32 +58,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> _transactions = [
-    Transaction(
-      id: "t1",
-      title: "Antiga",
-      value: 580.29,
-      date: DateTime.now().subtract(Duration(days: 33)),
-    ),
-    Transaction(
-      id: "t2",
-      title: "Tenis",
-      value: 320.75,
-      date: DateTime.now().subtract(Duration(days: 3)),
-    ),
-    Transaction(
-      id: "t3",
-      title: "Luz",
-      value: 110.89,
-      date: DateTime.now().subtract(Duration(days: 2)),
-    ),
-    Transaction(
-      id: "t4",
-      title: "Agua",
-      value: 78.00,
-      date: DateTime.now().subtract(Duration(days: 4)),
-    ),
-  ];
+  final List<Transaction> _transactions = [];
+  late bool _showChart = false;
 
   List<Transaction> get _recentTransaction {
     return _transactions.where((tr) {
@@ -96,12 +77,18 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  _addTransaction(String title, double value) {
+  _removeTransaction(String id) {
+    setState(() {
+      _transactions.removeWhere((tr) => tr.id == id);
+    });
+  }
+
+  _addTransaction(String title, double value, DateTime date) {
     final newTransaction = Transaction(
       id: Random().nextDouble().toString(),
       title: title,
       value: value,
-      date: DateTime.now(),
+      date: date,
     );
 
     setState(() {
@@ -111,33 +98,97 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.of(context).pop();
   }
 
+  Widget _getIconButton(IconData icon, Function() fn) {
+    return Platform.isIOS
+        ? GestureDetector(
+            onTap: fn,
+            child: Icon(icon),
+          )
+        : IconButton(
+            onPressed: fn,
+            icon: Icon(icon),
+          );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Despesas pessoais"),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () => _openTransactionFormModal(context),
-            icon: const Icon(Icons.add),
-          )
+    final mediaQuery = MediaQuery.of(context);
+
+    bool isLandscape = mediaQuery.orientation == Orientation.landscape;
+
+    final actions = <Widget>[
+      if (isLandscape)
+        _getIconButton(
+          _showChart
+              ? Platform.isIOS
+                  ? CupertinoIcons.list_bullet
+                  : Icons.list_rounded
+              : Platform.isIOS
+                  ? CupertinoIcons.chart_bar_alt_fill
+                  : Icons.bar_chart_rounded,
+          () {
+            setState(() {
+              _showChart = !_showChart;
+            });
+          },
+        ),
+      _getIconButton(
+        Platform.isIOS ? CupertinoIcons.add : Icons.add,
+        () => _openTransactionFormModal(context),
+      )
+    ];
+
+    final PreferredSizeWidget appBar = AppBar(
+      title: const Text("Despesas pessoais"),
+      actions: actions,
+    );
+
+    final avaibleHeight = mediaQuery.size.height -
+        appBar.preferredSize.height -
+        mediaQuery.padding.top;
+
+    final pageHome = SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // ignore: sized_box_for_whitespace
+          if (_showChart || !isLandscape)
+            SizedBox(
+              height: avaibleHeight * (isLandscape ? 0.8 : 0.3),
+              child: Chart(_recentTransaction),
+            ),
+          if (!_showChart || !isLandscape)
+            SizedBox(
+              height: avaibleHeight * (isLandscape ? 1 : 0.7),
+              child: TransactionList(_transactions, _removeTransaction),
+            ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            // ignore: sized_box_for_whitespace
-            Chart(_recentTransaction),
-            TransactionList(_transactions),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTransactionFormModal(context),
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            navigationBar: CupertinoNavigationBar(
+              middle: Text("Despesas pessoais"),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: actions,
+              ),
+            ),
+            child: pageHome,
+          )
+        : Scaffold(
+            appBar: appBar,
+            body: pageHome,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    onPressed: () => _openTransactionFormModal(context),
+                    child: const Icon(Icons.add),
+                  ),
+            floatingActionButtonLocation: isLandscape
+                ? FloatingActionButtonLocation.endFloat
+                : FloatingActionButtonLocation.centerFloat,
+          );
   }
 }
