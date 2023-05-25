@@ -71,9 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
     showModalBottomSheet(
         context: context,
         builder: (_) {
-          return TransactionForm(
-            onSubmit: _addTransaction,
-          );
+          return TransactionForm(_addTransaction);
         });
   }
 
@@ -147,22 +145,24 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar.preferredSize.height -
         mediaQuery.padding.top;
 
-    final pageHome = SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // ignore: sized_box_for_whitespace
-          if (_showChart || !isLandscape)
-            SizedBox(
-              height: avaibleHeight * (isLandscape ? 0.8 : 0.3),
-              child: Chart(_recentTransaction),
-            ),
-          if (!_showChart || !isLandscape)
-            SizedBox(
-              height: avaibleHeight * (isLandscape ? 1 : 0.7),
-              child: TransactionList(_transactions, _removeTransaction),
-            ),
-        ],
+    final pageHome = SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // ignore: sized_box_for_whitespace
+            if (_showChart || !isLandscape)
+              SizedBox(
+                height: avaibleHeight * (isLandscape ? 0.8 : 0.3),
+                child: Chart(_recentTransaction),
+              ),
+            if (!_showChart || !isLandscape)
+              SizedBox(
+                height: avaibleHeight * (isLandscape ? 1 : 0.7),
+                child: TransactionList(_transactions, _removeTransaction),
+              ),
+          ],
+        ),
       ),
     );
 
